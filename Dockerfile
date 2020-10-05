@@ -9,13 +9,11 @@ RUN mkdir /log
 
 WORKDIR /duckling
 
-ADD stack.yaml .
+COPY . .
 
 ENV LANG=C.UTF-8
 
 RUN stack setup
-
-ADD . .
 
 # NOTE:`stack build` will use as many cores as are available to build
 # in parallel. However, this can cause OOM issues as the linking step
@@ -23,7 +21,7 @@ ADD . .
 # '-j1' flag to force the build to run sequentially.
 RUN stack install
 
-FROM debian:stretch
+FROM debian:buster
 
 ENV LANG C.UTF-8
 
@@ -36,4 +34,4 @@ COPY --from=builder /root/.local/bin/duckling-example-exe /usr/local/bin/
 
 EXPOSE 8000
 
-CMD ["duckling-example-exe", "-p", "8000"]
+CMD ["duckling-example-exe", "-p", "8000", "--no-access-log", "--no-error-log"]
