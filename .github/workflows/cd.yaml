@@ -101,4 +101,4 @@ jobs:
               --set image.repository=${DOCKER_IMAGE}/${ECR_REPOSITORY} \
               --set image.tag=${RELEASE_VERSION} \
               -f ./helm-chart/values.yaml
-              -f ./helm-chart/values.${K8S_NAMESPACE}.yaml
+              -f ./helm-chart/values/ns-values/values.${K8S_NAMESPACE}.yaml
