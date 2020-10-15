@@ -1,0 +1,11 @@
+# Default values for chemondis-iupac.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+resources:
+  limits:
+    cpu: 1
+    memory: 800Mi
+  requests:
+    cpu: 0.5
+    memory: 256Mi
