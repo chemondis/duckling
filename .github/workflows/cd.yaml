@@ -1,0 +1,102 @@
+name: Continuous Delivery
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  RELEASE_VERSION: ${{ github.sha }}
+  ECR_REPOSITORY: chemondis/duckling
+  K8S_SERVICE: chemondis-duckling
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        stack: ["2.3.1"]
+        ghc: ["8.8.3"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Cache Stack
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.stack
+            ./.stack-work
+          key: ${{ runner.os }}-${{ matrix.ghc }}-stack-${{ hashFiles('**/stack.yaml.lock') }}
+
+      - name: Run Tests
+        uses: actions/setup-haskell@v1.1
+        with:
+          enable-stack: true
+          ghc-version: ${{ matrix.ghc }}
+          stack-version: ${{ matrix.stack }}
+        run: |  # It's important to regenerate the classifiers after updating the code and before running the test suite.
+          stack build :duckling-regen-exe && stack exec duckling-regen-exe && stack test
+
+  release:
+    runs-on: ubuntu-latest
+    needs: [test]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build Docker image and push to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$RELEASE_VERSION .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$RELEASE_VERSION
+
+  deploy-dev:
+    runs-on: ubuntu-latest
+    needs: [release]
+    strategy:
+      matrix:
+        k8s-namespace: ["chemondis-dev"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Helm Deploy
+        uses: koslibpro/helm-eks-action@master
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA_DEV }}
+          K8S_NAMESPACE: ${{ matrix.k8s-namespace }}
+        with:
+          command: |
+            helm upgrade ${K8S_SERVICE} --install --wait ./helm-chart \
+              --namespace ${K8S_NAMESPACE}
+              --set image.repository=${DOCKER_IMAGE}/${ECR_REPOSITORY} \
+              --set image.tag=${RELEASE_VERSION} \
+              -f ./helm-chart/values.yaml
+              -f ./helm-chart/values.${K8S_NAMESPACE}.yaml
