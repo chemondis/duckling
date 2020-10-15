@@ -30,12 +30,14 @@ jobs:
             ./.stack-work
           key: ${{ runner.os }}-${{ matrix.ghc }}-stack-${{ hashFiles('**/stack.yaml.lock') }}
 
-      - name: Run Tests
+      - name: Setup Haskell
         uses: actions/setup-haskell@v1.1
         with:
           enable-stack: true
           ghc-version: ${{ matrix.ghc }}
           stack-version: ${{ matrix.stack }}
+        
+      - name: Run Tests
         run: |  # It's important to regenerate the classifiers after updating the code and before running the test suite.
           stack build :duckling-regen-exe && stack exec duckling-regen-exe && stack test
 
