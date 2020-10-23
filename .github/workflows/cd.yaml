@@ -6,10 +6,10 @@ on:
       - master
 
 env:
-  RELEASE_TAG: ${{ github.sha }}
-  ECR_REPOSITORY: chemondis/duckling
+  RELEASE_TAG: ${{ github.sha }}  # https://docs.github.com/en/free-pro-team@latest/actions/reference/context-and-expression-syntax-for-github-actions#github-context
+  K8S_SERVICE_NAME: chemondis-duckling
   K8S_NAMESPACE: duckling
-  K8S_SERVICE: chemondis-duckling
+  ECR_REPOSITORY: chemondis/duckling
 
 jobs:
   test:
@@ -67,9 +67,11 @@ jobs:
     needs: [ release ]
     strategy:
       matrix:
-        kube-config-data:  # designates different clusters i.e dev/prod
-          - ${{ secrets.KUBE_CONFIG_DATA_DEV }}
-          - ${{ secrets.KUBE_CONFIG_DATA_PRD }}
+        cluster:
+          - name: dev
+            kube-config-data: ${{ secrets.KUBE_CONFIG_DATA_DEV }}
+          - name: prod
+            kube-config-data: ${{ secrets.KUBE_CONFIG_DATA_PROD }}
 
     steps:
       - name: Checkout
@@ -89,12 +91,14 @@ jobs:
       - name: Helm Deploy
         uses: koslibpro/helm-eks-action@master
         env:
-          KUBE_CONFIG_DATA: ${{ matrix.kube-config-data }}
+          CLUSTER_NAME: ${{ matrix.cluster.name }}
+          KUBE_CONFIG_DATA: ${{ matrix.cluster.kube-config-data }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         with:
           command: |
-            helm upgrade ${K8S_SERVICE} --install --wait ./helm-chart \
+            helm upgrade ${K8S_SERVICE_NAME} --install --wait ./helm-chart \
               --namespace ${K8S_NAMESPACE}
               --set image.repository=${ECR_REGISTRY}/${ECR_REPOSITORY} \
               --set image.tag=${RELEASE_TAG} \
               -f ./helm-chart/values.yaml
+              -f ./helm-chart/cluster-values/${CLUSTER_NAME}.yaml
