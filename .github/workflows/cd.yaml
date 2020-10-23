@@ -6,8 +6,9 @@ on:
       - master
 
 env:
-  RELEASE_VERSION: ${{ github.sha }}
+  RELEASE_TAG: ${{ github.sha }}
   ECR_REPOSITORY: chemondis/duckling
+  K8S_NAMESPACE: duckling
   K8S_SERVICE: chemondis-duckling
 
 jobs:
@@ -35,9 +36,9 @@ jobs:
         run: |  # It's important to regenerate the classifiers after updating the code and before running the test suite.
           stack build :duckling-regen-exe && stack exec duckling-regen-exe && stack test
 
-  release:
+  build:
     runs-on: ubuntu-latest
-    needs: [test]
+    needs: [ test ]
 
     steps:
       - name: Checkout
@@ -58,15 +59,17 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$RELEASE_VERSION .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$RELEASE_VERSION
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$RELEASE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$RELEASE_TAG
 
   deploy-dev:
     runs-on: ubuntu-latest
-    needs: [release]
+    needs: [ release ]
     strategy:
       matrix:
-        k8s-namespace: ["chemondis-dev"]
+        kube-config-data:  # designates different clusters i.e dev/prod
+          - ${{ secrets.KUBE_CONFIG_DATA_DEV }}
+          - ${{ secrets.KUBE_CONFIG_DATA_PRD }}
 
     steps:
       - name: Checkout
@@ -86,13 +89,12 @@ jobs:
       - name: Helm Deploy
         uses: koslibpro/helm-eks-action@master
         env:
-          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA_DEV }}
-          K8S_NAMESPACE: ${{ matrix.k8s-namespace }}
+          KUBE_CONFIG_DATA: ${{ matrix.kube-config-data }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         with:
           command: |
             helm upgrade ${K8S_SERVICE} --install --wait ./helm-chart \
               --namespace ${K8S_NAMESPACE}
-              --set image.repository=${DOCKER_IMAGE}/${ECR_REPOSITORY} \
-              --set image.tag=${RELEASE_VERSION} \
+              --set image.repository=${ECR_REGISTRY}/${ECR_REPOSITORY} \
+              --set image.tag=${RELEASE_TAG} \
               -f ./helm-chart/values.yaml
-              -f ./helm-chart/values/ns-values/values.${K8S_NAMESPACE}.yaml
