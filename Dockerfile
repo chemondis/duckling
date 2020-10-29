@@ -32,6 +32,6 @@ RUN apt-get update -qq && \
 
 COPY --from=builder /root/.local/bin/duckling-example-exe /usr/local/bin/
 
-EXPOSE 8000
+EXPOSE 80
 
-CMD ["duckling-example-exe", "-p", "8000", "--no-access-log", "--no-error-log"]
+CMD ["duckling-example-exe", "-p", "80", "--no-access-log", "--no-error-log"]
