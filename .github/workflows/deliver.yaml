@@ -1,4 +1,4 @@
-name: Deploy
+name: Deliver
 
 on:
   push:
@@ -90,8 +90,8 @@ jobs:
         with:
           command: |
             helm upgrade ${K8S_SERVICE_NAME} --install --wait ./helm-chart \
-              --namespace ${K8S_NAMESPACE}
+              --namespace ${K8S_NAMESPACE} \
               --set image.repository=${ECR_REGISTRY}/${ECR_REPOSITORY} \
               --set image.tag=${RELEASE_TAG} \
-              -f ./helm-chart/values.yaml
+              -f ./helm-chart/values.yaml \
               -f ./helm-chart/cluster-values/${CLUSTER_NAME}.yaml
