@@ -90,7 +90,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: Configure EKS Access
-        with:
+        env:
           EKS_CLUSTER_NAME: ${{ matrix.k8s-cluster-name }}
         run: |
           aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME} --role-arn ${EKS_ROLE}
