@@ -6,10 +6,15 @@ on:
       - master
 
 env:
-  RELEASE_TAG: ${{ github.sha }}  # https://docs.github.com/en/free-pro-team@latest/actions/reference/context-and-expression-syntax-for-github-actions#github-context
+  # REPO
   K8S_SERVICE_NAME: chemondis-duckling
   K8S_NAMESPACE: duckling
   ECR_REPOSITORY: chemondis/duckling
+  # RELEASE
+  RELEASE_TAG: ${{ github.sha }}
+  # EKS
+  EKS_ROLE: arn:aws:iam::525010213692:role/devops-eks-master
+  EKS_CLUSTER_ARN: arn:aws:eks:eu-central-1:525010213692:cluster
 
 jobs:
   test:
@@ -31,7 +36,7 @@ jobs:
         uses: actions/setup-haskell@v1.1.3
         with:
           enable-stack: true
-        
+
       - name: Run Tests
         run: |  # It's important to regenerate the classifiers after updating the code and before running the test suite.
           stack build :duckling-regen-exe && stack exec duckling-regen-exe && stack test
@@ -65,6 +70,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: [ build ]
+    strategy:
+      matrix:
+        k8s-cluster-name: [Chemondis-Dev-EKS, Chemondis-Prod-EKS]
 
     steps:
       - name: Checkout
@@ -76,22 +84,26 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-central-1
-
+      
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Helm Deploy
-        uses: koslibpro/helm-eks-action@master
-        env:
-          CLUSTER_NAME: dev
-          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA_DEV }}
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      - name: Configure EKS Access
         with:
-          command: |
-            helm upgrade ${K8S_SERVICE_NAME} --install --wait ./helm-chart \
-              --namespace ${K8S_NAMESPACE} \
-              --set image.repository=${ECR_REGISTRY}/${ECR_REPOSITORY} \
-              --set image.tag=${RELEASE_TAG} \
-              -f ./helm-chart/values.yaml \
-              -f ./helm-chart/cluster-values/${CLUSTER_NAME}.yaml
+          EKS_CLUSTER_NAME: ${{ matrix.k8s-cluster-name }}
+        run: |
+          aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME} --role-arn ${EKS_ROLE}
+          kubectl config set-context ${EKS_CLUSTER_ARN}/${EKS_CLUSTER_NAME}
+
+      - name: Helm Deploy
+        env:
+          EKS_CLUSTER_NAME: ${{ matrix.k8s-cluster-name }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          helm upgrade ${K8S_SERVICE_NAME} --install --wait ./helm-chart \
+            --namespace ${K8S_NAMESPACE} \
+            --set image.repository=${ECR_REGISTRY}/${ECR_REPOSITORY} \
+            --set image.tag=${RELEASE_TAG} \
+            -f ./helm-chart/values.yaml \
+            -f ./helm-chart/cluster-values/${EKS_CLUSTER_NAME,,}.yaml
