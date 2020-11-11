@@ -46,13 +46,15 @@ allExamples = concat
              ]
   , examples (simple Gram 2 Nothing)
              [ "2 grams"
-             , "0.002 kg"
-             , "2/1000 kilograms"
-             , "2000 milligrams"
+             , "2g"
              ]
-  , examples (simple Gram 1000 Nothing)
+  , examples (simple Kilogram 1 Nothing)
              [ "a kilogram"
              , "a kg"
+             ]
+  , examples (simple Milligram 1 Nothing)
+             [ "a milligram"
+             , "a mg"
              ]
   , examples (simple Pound 1 Nothing)
              [ "a Pound"
@@ -72,12 +74,25 @@ allExamples = concat
              , "0.75 cup"
              , ".75 cups"
              ]
+  , examples (simple Piece 3 (Just "bags"))
+             [ "3 Pieces of bags"
+             , "3 piece of BaGs"
+             ]
+  , examples (simple Piece 1 Nothing)
+             [ "1 piece"
+             , "a Piece"
+             ]
   , examples (simple Gram 500 (Just "strawberries"))
              [ "500 grams of strawberries"
              , "500g of strawberries"
-             , "0.5 kilograms of strawberries"
+             ]
+  , examples (simple Milligram 500 (Just "strawberries"))
+             [ "500mg of strawberries"
+             , "500 milligram of strawberries"
+             ]
+  , examples (simple Kilogram 0.5 (Just "strawberries"))
+             [ "0.5 kilograms of strawberries"
              , "0.5 kg of strawberries"
-             , "500000mg of strawberries"
              ]
   , examples (between Gram (100,1000) (Just "strawberries"))
               [ "100-1000 gram of strawberries"
@@ -90,8 +105,11 @@ allExamples = concat
               , "~2-7 grams"
               , "from 2 to 7 g"
               , "between 2.0 g and about 7.0 g"
-              , "between 0.002 kg and about 0.007 kg"
               , "2 - ~7 grams"
+              ]
+  , examples (between Kilogram (2,7) Nothing)
+              [ "between 2 kg and about 7 kg"
+              , "around 2 -7 Kilograms"
               ]
   , examples (under Pound 6 (Just "meat"))
               [ "less than six pounds of meat"
@@ -110,5 +128,13 @@ allExamples = concat
               , "at least 4.0 oz of chocolate"
               , "over four ounces of chocolate"
               , "more than four ounces of chocolate"
+              ]
+  , examples (simple Tonne 2 Nothing)
+              [ "2 tonnes"
+              , "2 tons"
+              ]
+  , examples (simple Tonne 3 (Just "sugar"))
+              [ "3 tonnes of sugar"
+              , "3 tons of Sugar"
               ]
   ]

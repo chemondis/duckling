@@ -28,9 +28,13 @@ import Prelude
 data Unit
   = Bowl
   | Cup
+  | Piece
   | Custom Text
   | Dish
+  | Milligram
   | Gram
+  | Kilogram
+  | Tonne
   | Ounce
   | Pint
   | Pound
