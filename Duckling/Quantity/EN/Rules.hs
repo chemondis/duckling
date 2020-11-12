@@ -33,7 +33,7 @@ import qualified Duckling.Quantity.Types as TQuantity
 quantities :: [(Text, String, TQuantity.Unit)]
 quantities =
   [ ("<quantity> cups", "(cups?)", TQuantity.Cup)
-  , ("<quantity> pieces", "(pieces?)", TQuantity.Piece)
+  , ("<quantity> pieces", "((pieces?)|pcs)", TQuantity.Piece)
   , ("<quantity> milligrams", "(m(illi)?g(ram)?s?)", TQuantity.Milligram)
   , ("<quantity> grams", "(g(ram)?s?)", TQuantity.Gram)
   , ("<quantity> kilograms", "(k(ilo)?g(ram)?s?)", TQuantity.Kilogram)

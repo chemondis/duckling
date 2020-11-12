@@ -74,13 +74,15 @@ allExamples = concat
              , "0.75 cup"
              , ".75 cups"
              ]
-  , examples (simple Piece 3 (Just "bags"))
-             [ "3 Pieces of bags"
-             , "3 piece of BaGs"
+  , examples (simple Piece 3 (Just "rods"))
+             [ "3 Pieces of rods"
+             , "3 pcs of rods"
              ]
   , examples (simple Piece 1 Nothing)
              [ "1 piece"
              , "a Piece"
+             , "a pcs"
+             , "1 pcs"
              ]
   , examples (simple Gram 500 (Just "strawberries"))
              [ "500 grams of strawberries"
@@ -128,6 +130,10 @@ allExamples = concat
               , "at least 4.0 oz of chocolate"
               , "over four ounces of chocolate"
               , "more than four ounces of chocolate"
+              ]
+  , examples (simple Tonne 1 Nothing)
+              [ "1 tonne"
+              , "a ton"
               ]
   , examples (simple Tonne 2 Nothing)
               [ "2 tonnes"
