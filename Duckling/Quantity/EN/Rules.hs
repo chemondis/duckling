@@ -39,7 +39,7 @@ quantities =
   , ("<quantity> kilograms", "(k(ilo)?g(ram)?s?)", TQuantity.Kilogram)
   , ("<quantity> lb", "((lb|pound)s?)", TQuantity.Pound)
   , ("<quantity> oz", "((ounces?)|oz)", TQuantity.Ounce)
-  , ("<quantity> tonnes", "(ton(ne)?s?)", TQuantity.Tonne)
+  , ("<quantity> tonnes", "(t(on(ne)?s?)?)", TQuantity.Tonne)
   ]
 
 opsMap :: HashMap Text (Double -> Double)

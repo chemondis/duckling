@@ -134,13 +134,16 @@ allExamples = concat
   , examples (simple Tonne 1 Nothing)
               [ "1 tonne"
               , "a ton"
+              , "one t"
               ]
   , examples (simple Tonne 2 Nothing)
               [ "2 tonnes"
               , "2 tons"
+              , "2 t"
               ]
   , examples (simple Tonne 3 (Just "sugar"))
               [ "3 tonnes of sugar"
               , "3 tons of Sugar"
+              , "3 t of Sugar"
               ]
   ]
