@@ -45,11 +45,11 @@ jobs:
           K8S_SERVICE_NAME: chemondis-duckling
           EKS_CLUSTER_NAME: ${{ matrix.k8s-cluster-name }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE-TAG: ${{ github.event.inputs.image-tag }}
+          IMAGE_TAG: ${{ github.event.inputs.image-tag }}
         run: |
           helm upgrade ${K8S_SERVICE_NAME} --install --wait ./helm-chart \
             --namespace ${K8S_NAMESPACE} \
             --set image.repository=${ECR_REGISTRY}/${ECR_REPOSITORY} \
-            --set image.tag=${IMAGE-TAG} \
+            --set image.tag=${IMAGE_TAG} \
             -f ./helm-chart/values.yaml \
             -f ./helm-chart/cluster-values/${EKS_CLUSTER_NAME,,}.yaml
