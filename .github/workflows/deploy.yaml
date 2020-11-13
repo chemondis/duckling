@@ -1,11 +1,11 @@
 name: Deploy
 
-on: workflow_dispatch
-
-inputs:
-  commit-hash:
-    description: "The version of the image be deployed (commit hash)"
-    required: true
+on:
+  workflow_dispatch:
+    inputs:
+      commit-hash:
+        description: "The version of the image be deployed (commit hash)"
+        required: true
 
 jobs:
   deploy:
