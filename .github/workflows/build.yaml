@@ -53,6 +53,7 @@ jobs:
 
       - name: Build Docker image and push to ECR
         env:
+          ECR_REPOSITORY: chemondis/duckling
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           RELEASE_TAG: ${{ github.sha }}
         run: |
