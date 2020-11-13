@@ -1,5 +1,4 @@
 name: Build
-description: "Run tests, build a docker image and push it to ECR registry."
 
 on:
   push:

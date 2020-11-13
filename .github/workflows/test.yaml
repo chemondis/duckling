@@ -1,5 +1,4 @@
 name: Test
-description: "Regenerate the Duckling classifiers and run the tests"
 
 on:
   pull_request:
