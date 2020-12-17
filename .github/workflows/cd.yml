@@ -1,0 +1,148 @@
+name: Continuous Delivery
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - '*.md'
+      - '.github/workflows/test.yml'
+      - '.github/workflows/deploy.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Cache Stack
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.stack
+            ./.stack-work
+          key: ${{ runner.os }}-stack-${{ hashFiles('**/stack.yaml.lock') }}-
+
+      - name: Setup Haskell
+        uses: actions/setup-haskell@v1.1.3
+        with:
+          enable-stack: true
+
+      - name: Run Tests
+        run: |  # It's important to regenerate the classifiers after updating the code and before running the test suite.
+          stack build :duckling-regen-exe && stack exec duckling-regen-exe && stack test
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build image and push to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: chemondis/duckling
+          RELEASE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$RELEASE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$RELEASE_TAG
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      matrix:
+        k8s-cluster-name: [Chemondis-Dev-EKS, Chemondis-Prod-EKS]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+      
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Configure EKS Access
+        env:
+          EKS_ROLE: arn:aws:iam::525010213692:role/devops-eks-master
+          EKS_CLUSTER_NAME: ${{ matrix.k8s-cluster-name }}
+          EKS_CLUSTER_ARN: arn:aws:eks:eu-central-1:525010213692:cluster
+        run: |
+          aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME} --role-arn ${EKS_ROLE}
+          kubectl config set-context ${EKS_CLUSTER_ARN}/${EKS_CLUSTER_NAME}
+
+      - name: Helm Deploy
+        env:
+          K8S_NAMESPACE: duckling
+          ECR_REPOSITORY: chemondis/duckling
+          K8S_SERVICE_NAME: chemondis-duckling
+          EKS_CLUSTER_NAME: ${{ matrix.k8s-cluster-name }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          RELEASE_TAG: ${{ github.sha }}
+        run: |
+          helm upgrade ${K8S_SERVICE_NAME} --install --atomic ./helm-chart \
+            --namespace ${K8S_NAMESPACE} \
+            --set image.repository=${ECR_REGISTRY}/${ECR_REPOSITORY} \
+            --set image.tag=${IMAGE_TAG} \
+            -f ./helm-chart/values.yaml \
+            -f ./helm-chart/cluster-values/${EKS_CLUSTER_NAME,,}.yaml
+
+  # hub:
+  #   runs-on: ubuntu-latest
+  #   needs: build
+
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v2
+
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v1
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: eu-central-1
+
+  #     - name: Login to Amazon ECR
+  #       id: login-ecr
+  #       uses: aws-actions/amazon-ecr-login@v1
+
+  #     - name: Pull image from ECR
+  #       env:
+  #         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+  #         ECR_REPOSITORY: chemondis/duckling
+  #         RELEASE_TAG: ${{ github.sha }}
+  #       run: |
+  #         docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$RELEASE_TAG
+
+  #     - name: Login to Docker Hub
+  #       uses: docker/login-action@v1
+  #       with:
+  #         username: ${{ secrets.DOCKERHUB_USERNAME }}
+  #         password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+  #     - name: Tag image and push to Docker Hub
+  #       env:
+  #         RELEASE_TAG: ${{ github.sha }}
+  #       run: |
