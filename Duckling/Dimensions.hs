@@ -32,6 +32,7 @@ import qualified Duckling.Dimensions.EL as ELDimensions
 import qualified Duckling.Dimensions.EN as ENDimensions
 import qualified Duckling.Dimensions.ES as ESDimensions
 import qualified Duckling.Dimensions.ET as ETDimensions
+import qualified Duckling.Dimensions.FA as FADimensions
 import qualified Duckling.Dimensions.FI as FIDimensions
 import qualified Duckling.Dimensions.FR as FRDimensions
 import qualified Duckling.Dimensions.GA as GADimensions
@@ -62,6 +63,7 @@ import qualified Duckling.Dimensions.SK as SKDimensions
 import qualified Duckling.Dimensions.SV as SVDimensions
 import qualified Duckling.Dimensions.SW as SWDimensions
 import qualified Duckling.Dimensions.TA as TADimensions
+import qualified Duckling.Dimensions.TE as TEDimensions
 import qualified Duckling.Dimensions.TH as THDimensions
 import qualified Duckling.Dimensions.TR as TRDimensions
 import qualified Duckling.Dimensions.UK as UKDimensions
@@ -110,6 +112,7 @@ langDimensions EL = ELDimensions.allDimensions
 langDimensions EN = ENDimensions.allDimensions
 langDimensions ES = ESDimensions.allDimensions
 langDimensions ET = ETDimensions.allDimensions
+langDimensions FA = FADimensions.allDimensions
 langDimensions FI = FIDimensions.allDimensions
 langDimensions FR = FRDimensions.allDimensions
 langDimensions GA = GADimensions.allDimensions
@@ -140,6 +143,7 @@ langDimensions SK = SKDimensions.allDimensions
 langDimensions SV = SVDimensions.allDimensions
 langDimensions SW = SWDimensions.allDimensions
 langDimensions TA = TADimensions.allDimensions
+langDimensions TE = TEDimensions.allDimensions
 langDimensions TH = THDimensions.allDimensions
 langDimensions TR = TRDimensions.allDimensions
 langDimensions UK = UKDimensions.allDimensions

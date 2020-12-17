@@ -34,6 +34,7 @@ import qualified Duckling.Rules.EN as ENRules
 import qualified Duckling.Rules.ES as ESRules
 import qualified Duckling.Rules.ET as ETRules
 import qualified Duckling.Rules.FI as FIRules
+import qualified Duckling.Rules.FA as FARules
 import qualified Duckling.Rules.FR as FRRules
 import qualified Duckling.Rules.GA as GARules
 import qualified Duckling.Rules.HE as HERules
@@ -63,6 +64,7 @@ import qualified Duckling.Rules.SK as SKRules
 import qualified Duckling.Rules.SV as SVRules
 import qualified Duckling.Rules.SW as SWRules
 import qualified Duckling.Rules.TA as TARules
+import qualified Duckling.Rules.TE as TERules
 import qualified Duckling.Rules.TH as THRules
 import qualified Duckling.Rules.TR as TRRules
 import qualified Duckling.Rules.UK as UKRules
@@ -102,6 +104,7 @@ defaultRules EN = ENRules.defaultRules
 defaultRules ES = ESRules.defaultRules
 defaultRules ET = ETRules.defaultRules
 defaultRules FI = FIRules.defaultRules
+defaultRules FA = FARules.defaultRules
 defaultRules FR = FRRules.defaultRules
 defaultRules GA = GARules.defaultRules
 defaultRules HE = HERules.defaultRules
@@ -131,6 +134,7 @@ defaultRules SK = SKRules.defaultRules
 defaultRules SV = SVRules.defaultRules
 defaultRules SW = SWRules.defaultRules
 defaultRules TA = TARules.defaultRules
+defaultRules TE = TERules.defaultRules
 defaultRules TH = THRules.defaultRules
 defaultRules TR = TRRules.defaultRules
 defaultRules UK = UKRules.defaultRules
@@ -150,6 +154,7 @@ localeRules EN = ENRules.localeRules
 localeRules ES = ESRules.localeRules
 localeRules ET = ETRules.localeRules
 localeRules FI = FIRules.localeRules
+localeRules FA = FARules.localeRules
 localeRules FR = FRRules.localeRules
 localeRules GA = GARules.localeRules
 localeRules HE = HERules.localeRules
@@ -179,6 +184,7 @@ localeRules SK = SKRules.localeRules
 localeRules SV = SVRules.localeRules
 localeRules SW = SWRules.localeRules
 localeRules TA = TARules.localeRules
+localeRules TE = TERules.localeRules
 localeRules TH = THRules.localeRules
 localeRules TR = TRRules.localeRules
 localeRules UK = UKRules.localeRules
@@ -198,6 +204,7 @@ langRules EN = ENRules.langRules
 langRules ES = ESRules.langRules
 langRules ET = ETRules.langRules
 langRules FI = FIRules.langRules
+langRules FA = FARules.langRules
 langRules FR = FRRules.langRules
 langRules GA = GARules.langRules
 langRules HE = HERules.langRules
@@ -227,6 +234,7 @@ langRules SK = SKRules.langRules
 langRules SV = SVRules.langRules
 langRules SW = SWRules.langRules
 langRules TA = TARules.langRules
+langRules TE = TERules.langRules
 langRules TH = THRules.langRules
 langRules TR = TRRules.langRules
 langRules UK = UKRules.langRules
