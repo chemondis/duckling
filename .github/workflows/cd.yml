@@ -9,6 +9,17 @@ on:
       - '.github/workflows/test.yml'
       - '.github/workflows/deploy.yml'
 
+env:
+  # REPO
+  K8S_SERVICE_NAME: chemondis-duckling
+  K8S_NAMESPACE: duckling
+  ECR_REPOSITORY: chemondis/duckling
+  # RELEASE
+  RELEASE_TAG: ${{ github.sha }}
+  # EKS
+  EKS_ROLE: arn:aws:iam::525010213692:role/devops-eks-master
+  EKS_CLUSTER_ARN: arn:aws:eks:eu-central-1:525010213692:cluster
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -56,8 +67,6 @@ jobs:
       - name: Build image and push to ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: chemondis/duckling
-          RELEASE_TAG: ${{ github.sha }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$RELEASE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$RELEASE_TAG
@@ -86,23 +95,17 @@ jobs:
 
       - name: Configure EKS Access
         env:
-          EKS_ROLE: arn:aws:iam::525010213692:role/devops-eks-master
           EKS_CLUSTER_NAME: ${{ matrix.k8s-cluster-name }}
-          EKS_CLUSTER_ARN: arn:aws:eks:eu-central-1:525010213692:cluster
         run: |
           aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME} --role-arn ${EKS_ROLE}
           kubectl config set-context ${EKS_CLUSTER_ARN}/${EKS_CLUSTER_NAME}
 
       - name: Helm Deploy
         env:
-          K8S_NAMESPACE: duckling
-          ECR_REPOSITORY: chemondis/duckling
-          K8S_SERVICE_NAME: chemondis-duckling
           EKS_CLUSTER_NAME: ${{ matrix.k8s-cluster-name }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          RELEASE_TAG: ${{ github.sha }}
         run: |
-          helm upgrade ${K8S_SERVICE_NAME} --install --atomic ./helm-chart \
+          helm upgrade ${K8S_SERVICE_NAME} --install --wait ./helm-chart \
             --namespace ${K8S_NAMESPACE} \
             --set image.repository=${ECR_REGISTRY}/${ECR_REPOSITORY} \
             --set image.tag=${IMAGE_TAG} \
