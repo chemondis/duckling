@@ -7,25 +7,33 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        stack: ["2.5.1"]
+        ghc: ["9.0.1"]
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
+        name: Checkout
 
-      - name: Cache Stack
-        uses: actions/cache@v2
+      - uses: haskell/actions/setup@v1
+        name: Setup Haskell Stack
         with:
-          path: |
-            ~/.stack
-            ./.stack-work
-          key: ${{ runner.os }}-stack-${{ hashFiles('**/stack.yaml.lock') }}-
+          ghc-version: ${{ matrix.ghc }}
+          stack-version: ${{ matrix.stack }}
 
-      - name: Setup Haskell
-        uses: actions/setup-haskell@v1.1.3
+      - uses: actions/cache@v2.1.4
+        name: Cache ~/.stack
         with:
-          enable-stack: true
+          path: ~/.stack
+          key: ${{ runner.os }}-${{ matrix.ghc }}-stack
         
-      - name: Run Tests
-        run: |  # It's important to regenerate the classifiers after updating the code and before running the test suite.
-          stack build :duckling-regen-exe && stack exec duckling-regen-exe && stack test
+      - name: Build
+        run: |
+          stack build duckling:lib --system-ghc --test --bench --no-run-tests --no-run-benchmarks
+
+      - name: Test
+        run: |
+          stack test --system-ghc

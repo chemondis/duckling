@@ -6,11 +6,13 @@
 
 
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
 import Control.Applicative hiding (empty)
 import Control.Arrow ((***))
-import Control.Monad (unless)
+import Control.Exception (SomeException, catch)
+import Control.Monad (unless, when)
 import Control.Monad.IO.Class
 import Data.Aeson
 import Data.ByteString (ByteString, empty)
@@ -43,19 +45,33 @@ createIfMissing f = do
   exists <- doesFileExist f
   unless exists $ writeFile f ""
 
-setupLogs :: IO ()
-setupLogs = do
-  createDirectoryIfMissing False "log"
-  createIfMissing "log/error.log"
-  createIfMissing "log/access.log"
+shouldLog :: Maybe ConfigLog -> Bool
+shouldLog Nothing = False
+shouldLog (Just ConfigNoLog) = False
+shouldLog _ = True
+
+setupLogs :: Config a b -> IO ()
+setupLogs conf = do
+  let shouldLogErrors = shouldLog $ getErrorLog conf
+  let shouldLogAccesses = shouldLog $ getAccessLog conf
+
+  when (shouldLogErrors || shouldLogAccesses) $ createDirectoryIfMissing False "log"
+  when shouldLogErrors $ createIfMissing "log/error.log"
+  when shouldLogAccesses $ createIfMissing "log/access.log"
+
+loadTZs :: IO (HashMap Text TimeZoneSeries)
+loadTZs = do
+  let defaultPath = "/usr/share/zoneinfo/"
+  let fallbackPath = "/etc/zoneinfo/"
+  loadTimeZoneSeries defaultPath `catch` (\(_ :: SomeException) -> loadTimeZoneSeries fallbackPath)
 
 main :: IO ()
 main = do
-  setupLogs
-  tzs <- loadTimeZoneSeries "/usr/share/zoneinfo/"
+  tzs <- loadTZs
   p <- lookupEnv "PORT"
   conf <- commandLineConfig $
     maybe defaultConfig (`setPort` defaultConfig) (readMaybe =<< p)
+  setupLogs conf
   httpServe conf $
     ifTop (writeBS "quack!") <|>
     route

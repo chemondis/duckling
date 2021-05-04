@@ -22,9 +22,11 @@ import qualified Data.Text as Text
 
 import Duckling.Dimensions.Types
 import Duckling.Duration.Helpers
+import Duckling.Duration.Types (DurationData(..))
 import Duckling.Numeral.Types (NumeralData (..))
 import Duckling.Regex.Types
 import Duckling.Types
+import qualified Duckling.Duration.Types as TDuration
 import qualified Duckling.Numeral.Types as TNumeral
 import qualified Duckling.TimeGrain.Types as TG
 
@@ -152,6 +154,59 @@ ruleSaadeDuration = Rule
       _ -> Nothing
   }
 
+ruleCompositeDuration :: Rule
+ruleCompositeDuration = Rule
+  { name = "composite <duration>"
+  , pattern =
+    [ Predicate isNatural
+    , dimension TimeGrain
+    , dimension Duration
+    ]
+  , prod = \case
+      (Token Numeral NumeralData{TNumeral.value = v}:
+       Token TimeGrain g:
+       Token Duration dd@DurationData{TDuration.grain = dg}:
+       _) | g > dg -> Just $ Token Duration $ duration g (floor v) <> dd
+      _ -> Nothing
+  }
+
+ruleCompositeDurationCommasAnd :: Rule
+ruleCompositeDurationCommasAnd = Rule
+  { name = "composite <duration> (with ,/और)"
+  , pattern =
+    [ Predicate isNatural
+    , dimension TimeGrain
+    , regex ",|और"
+    , dimension Duration
+    ]
+  , prod = \case
+      (Token Numeral NumeralData{TNumeral.value = v}:
+        Token TimeGrain g:
+        _:
+        Token Duration dd@DurationData{TDuration.grain = dg}:
+        _) | g > dg -> Just $ Token Duration $ duration g (floor v) <> dd
+      _ -> Nothing
+  }
+
+ruleNAndHalfDuration :: Rule
+ruleNAndHalfDuration = Rule
+  { name = "डेढ़|ढाई <duration>"
+  , pattern =
+    [ regex "(डेढ़|ढाई)"
+    , dimension TimeGrain
+    ]
+  , prod = \case
+      (Token RegexMatch (GroupMatch (match:_)):
+       Token TimeGrain grain:
+       _) -> do
+        h <- case Text.toLower match of
+          "डेढ़" -> Just 1
+          "ढाई" -> Just 2
+          _ -> Nothing
+        Token Duration <$> nPlusOneHalf grain h
+      _ -> Nothing
+  }
+
 rules :: [Rule]
 rules =
   [  ruleDurationPandrahMinat
@@ -163,4 +218,7 @@ rules =
   ,  rulePauneDuration
   ,  ruleSavaDuration
   ,  ruleSaadeDuration
+  ,  ruleCompositeDuration
+  ,  ruleCompositeDurationCommasAnd
+  ,  ruleNAndHalfDuration
   ]

@@ -6,6 +6,7 @@
 
 
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NoRebindableSyntax #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -14,7 +15,6 @@ module Duckling.Time.DE.Rules
   ) where
 
 import Prelude
-import Data.Text (Text)
 import qualified Data.Text as Text
 
 import Duckling.Dimensions.Types
@@ -707,6 +707,19 @@ ruleNextCycle = Rule
       _ -> Nothing
   }
 
+ruleAfterNextCycle :: Rule
+ruleAfterNextCycle = Rule
+  { name = "after next <cycle>"
+  , pattern =
+    [ regex "(ü)ber ?n(ä)chste[ns]?"
+    , dimension TimeGrain
+    ]
+  , prod = \case
+      (_:Token TimeGrain grain:_) ->
+        tt $ cycleNth grain 2
+      _ -> Nothing
+  }
+
 ruleTimeofdayApproximately :: Rule
 ruleTimeofdayApproximately = Rule
   { name = "<time-of-day> approximately"
@@ -1099,6 +1112,22 @@ ruleIntersect = Rule
       _ -> Nothing
   }
 
+
+ruleDayOfWeekIntersectDuration :: Rule
+ruleDayOfWeekIntersectDuration = Rule
+  { name = "<day-of-week> in <duration>"
+  , pattern =
+    [ Predicate isADayOfWeek
+    , regex "(in|vor)"
+    , dimension Duration
+    ]
+  , prod = \case
+      (Token Time td:Token RegexMatch (GroupMatch (match:_)):Token Duration dd:_) ->
+        case Text.toLower match of
+          "vor" -> Token Time <$> intersect td (durationIntervalAgo dd)
+          _     -> Token Time <$> intersect td (inDurationInterval dd)
+      _ -> Nothing
+  }
 ruleAboutTimeofday :: Rule
 ruleAboutTimeofday = Rule
   { name = "about <time-of-day>"
@@ -1830,6 +1859,7 @@ rules =
   , ruleIntersect
   , ruleIntersectBy
   , ruleIntersectByOfFromS
+  , ruleDayOfWeekIntersectDuration
   , ruleLastCycle
   , ruleLastCycleOfTime
   , ruleLastDayofweekOfTime
@@ -1844,6 +1874,7 @@ rules =
   , ruleNamedmonthDayofmonthNonOrdinal
   , ruleNamedmonthDayofmonthOrdinal
   , ruleNextCycle
+  , ruleAfterNextCycle
   , ruleNextNCycle
   , ruleNextTime
   , ruleNight
